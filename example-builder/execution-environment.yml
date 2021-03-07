@@ -1,0 +1,17 @@
+---
+version: 1
+
+build_arg_defaults:
+  ANSIBLE_RUNNER_IMAGE: "quay.io/ansible/ansible-runner:ubi8"
+
+ansible_config: "ansible.cfg"
+
+dependencies:
+  galaxy: requirements.yml
+  python: requirements.txt
+
+additional_build_steps:
+  prepend: |
+    RUN pip3 install --upgrade pip setuptools
+  append:
+    - RUN curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz | tar -xvzf - -C /usr/local/bin/ oc && chmod 755 /usr/local/bin/oc && ln -s /usr/local/bin/oc /usr/local/bin/kubectl

@@ -1,0 +1,50 @@
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: ansible-builder
+spec:
+  buildSteps:
+    - args:
+        - -c
+        - |
+          set -e
+          cd /workspace/source/$(build.source.contextDir)
+
+          /usr/local/bin/ansible-builder build -t $(build.output.image) -v 3
+      command:
+        - /bin/bash
+      image: "quay.io/ablock/ansible-runner-podman"
+      name: ansible-builder-build
+      resources:
+        limits:
+          cpu: 1
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /var/lib/containers/storage
+          name: ansible-builder-images
+      workingDir: /workspace/source
+    - args:
+        - push
+        - $(build.output.image)
+        - "--tls-verify=false"
+      command:
+        - /usr/bin/podman
+      image: "quay.io/ablock/ansible-runner-podman"
+      name: ansible-builder-push
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /var/lib/containers/storage
+          name: ansible-builder-images

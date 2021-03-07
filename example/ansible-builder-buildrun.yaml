@@ -1,0 +1,9 @@
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  generateName: ansible-builder-example-
+spec:
+  buildRef:
+    name: ansible-builder-example
+  serviceAccount:
+    name: pipeline
