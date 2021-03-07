@@ -23,7 +23,7 @@ make install
 Patch the Operator image with the appropriate tagged version
 
 ```
-kubectl patch deployment build-operator  --type json   -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"quay.io/shipwright/shipwright-operator:v0.3.0"}]'
+kubectl patch deployment build-operator  --type json -n build-operator  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"quay.io/shipwright/shipwright-operator:v0.3.0"}]'
 ```
 
 Confirm the operator is running in the `build-operator` project
@@ -37,17 +37,18 @@ kubectl get pods -n build-operator
 ```
 git clone https://github.com/sabre1041/ansible-builder-shipwright
 cd ansible-builder-shipwright
-kubectl apply -f resources/ansible-builder-clusterbuildpolicy.yaml
+kubectl apply -f resources/ansible-builder-clusterbuildstrategy.yaml
 ```
 
 ## Example
 
 To demonstrate how an Ansible Execution environment can be produced and published to a container registry using Shipwright, an example implementation is provided within this repository.
 
-1. Create a new Namespace called `ansible-builder-shipwright`
+1. Create a new Namespace called `ansible-builder-shipwright` and change the current context into the namespace
 
 ```
-kubectl create namespace `ansible-builder-shipwright`
+kubectl create namespace ansible-builder-shipwright
+kubectl config set-context --current --namespace=ansible-builder-shipwright
 ```
 
 2. Register the Shipwright Build
@@ -62,7 +63,6 @@ Confirm that the Build has been registered properly
 kubectl get builds.build.dev ansible-builder-example
 
 NAME                                        REGISTERED   REASON                        BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
-ansible-builder-example                     False        RemoteRepositoryUnreachable   ClusterBuildStrategy   ansible-builder     54s
 ansible-builder-example                     True         Succeeded                     ClusterBuildStrategy   ansible-builder     4h32m
 ```
 
