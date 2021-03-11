@@ -37,7 +37,7 @@ kubectl get pods -n build-operator
 ```
 git clone https://github.com/sabre1041/ansible-builder-shipwright
 cd ansible-builder-shipwright
-kubectl apply -f resources/ansible-builder-clusterbuildstrategy.yaml
+kubectl apply -f resources/ansible-builder-clusterbuildstrategy.yml
 ```
 
 ## Example
@@ -54,7 +54,7 @@ kubectl config set-context --current --namespace=ansible-builder-shipwright
 2. Register the Shipwright Build
 
 ```
-kubectl create -f example/ansible-builder-build.yaml
+kubectl create -f example/ansible-builder-build.yml
 ```
 
 Confirm that the Build has been registered properly
@@ -77,7 +77,7 @@ oc adm policy add-scc-to-user privileged -z pipeline
 3. Start a new Build by creating a `BuildRun`
 
 ```
-kubectl create -f example/ansible-builder-buildrun.yaml
+kubectl create -f example/ansible-builder-buildrun.yml
 ```
 
 4. Monitor the progress of the BuildRun
