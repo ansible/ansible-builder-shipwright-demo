@@ -91,3 +91,11 @@ tkn taskrun logs -f -L
 The above command will display the logs for the most recent TaskRun
 
 Once the build is complete, an image will be published to OpenShift's internal image registry. Alternatively, the produced image can also be stored in an external registry, such as quay.io by modifying the `ansible-builder-example` Build resource and modifying the `output.image` field. Credentials to authenticate with the external registry will most likely need to be provided. Consult the Shipwright documentation with the steps needed to configure.
+
+5. Verify the newly created Ansible Execution Environment
+
+Confirm the functionality of the newly created Execution Environment by starting a pod that will list all pods within this namespace using the [k8s_info](https://docs.ansible.com/ansible/latest/collections/community/kubernetes/k8s_info_module.html) module from the [community.kubernetes collection](https://galaxy.ansible.com/community/kubernetes), execute the following command:
+
+```
+kubectl run -it ansible-builder-shipwright-example-ee --image=image-registry.openshift-image-registry.svc:5000/ansible-builder-shipwright/ansible-builder-shipwright-example-ee:latest --serviceaccount=pipeline --rm --restart=Never -- ansible-runner run --hosts localhost -m community.kubernetes.k8s_info -a "api_key={{ lookup('file', '/var/run/secrets/kubernetes.io/serviceaccount/token') }} ca_cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt host=https://kubernetes.default.svc kind=Pod  namespace=ansible-builder-shipwright validate_certs=yes" /tmp/ansible-runner
+```
