@@ -14,22 +14,14 @@ Use the following steps to install Shipwright and the `ClusterBuildStrategy` to 
 2. Install Shipwright
 
 ```
-git clone https://github.com/shipwright-io/build
-cd build
-git checkout -b v0.3.0 tags/v0.3.0
-make install
-```
-
-Patch the Operator image with the appropriate tagged version
-
-```
-kubectl patch deployment build-operator  --type json -n build-operator  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"quay.io/shipwright/shipwright-operator:v0.3.0"}]'
+kubectl apply -f https://github.com/shipwright-io/build/releases/download/v0.4.0/release.yaml
+kubectl apply -f https://github.com/shipwright-io/build/releases/download/nightly/default_strategies.yaml
 ```
 
 Confirm the operator is running in the `build-operator` project
 
 ```
-kubectl get pods -n build-operator
+kubectl get pods -n shipwright-build
 ```
 
 3. Install the `ansible-builder` `ClusterBuildStrategy` by cloning this repository and adding the `ClusterBuildStrategy` to your environment
@@ -60,7 +52,7 @@ kubectl create -f example/ansible-builder-build.yml
 Confirm that the Build has been registered properly
 
 ```
-kubectl get builds.build.dev ansible-builder-example
+kubectl get builds.shipwright.io ansible-builder-example
 
 NAME                                        REGISTERED   REASON                        BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
 ansible-builder-example                     True         Succeeded                     ClusterBuildStrategy   ansible-builder     4h32m
@@ -71,7 +63,7 @@ ansible-builder-example                     True         Succeeded              
 Elevated permissions through the use of a privileged container is needed during the build process and when running on OpenShift, access to the `privileged` Security Context Constraint is required. Grant the `pipelines` service account access to the SCC by executing the following command:
 
 ```
-oc adm policy add-scc-to-user privileged -z pipeline
+oc adm policy add-scc-to-user privileged -n ansible-builder-shipwright -z pipeline
 ```
 
 3. Start a new Build by creating a `BuildRun`
