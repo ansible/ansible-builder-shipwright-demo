@@ -14,9 +14,9 @@ Use the following steps to install Shipwright and the `ClusterBuildStrategy` to 
 2. Install Shipwright
 
 ```
-kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.5.1/release.yaml
+kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.6.0/release.yaml
 
-kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/default_strategies.yaml
+kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.6.0/sample-strategies.yaml
 ```
 
 Confirm the operator is running in the `build-operator` project
@@ -118,8 +118,8 @@ Once the build is complete, an image will be published to OpenShift's internal i
 
 10. Verify the newly created Ansible Execution Environment
 
-Confirm the functionality of the newly created Execution Environment by starting a pod that will list all pods within this namespace using the [k8s_info](https://docs.ansible.com/ansible/latest/collections/community/kubernetes/k8s_info_module.html) module from the [community.kubernetes collection](https://galaxy.ansible.com/community/kubernetes), execute the following command:
+Confirm the functionality of the newly created Execution Environment by starting a pod that will list all pods within this namespace using the [k8s_info](https://docs.ansible.com/ansible/latest/collections/community/kubernetes/k8s_info_module.html) module from the [kubernetes.core collection](https://galaxy.ansible.com/kubernetes/core), execute the following command:
 
 ```
-kubectl run -it ansible-builder-shipwright-example-ee --image=image-registry.openshift-image-registry.svc:5000/ansible-builder-shipwright/ansible-builder-shipwright-example-ee:latest --serviceaccount=ansible-builder-shipwright --rm --restart=Never -- ansible-runner run --hosts localhost -m community.kubernetes.k8s_info -a "api_key={{ lookup('file', '/var/run/secrets/kubernetes.io/serviceaccount/token') }} ca_cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt host=https://kubernetes.default.svc kind=Pod  namespace=ansible-builder-shipwright validate_certs=yes" /tmp/ansible-runner
+kubectl run -it ansible-builder-shipwright-example-ee --image=image-registry.openshift-image-registry.svc:5000/ansible-builder-shipwright/ansible-builder-shipwright-example-ee:latest --serviceaccount=ansible-builder-shipwright --rm --restart=Never -- ansible-runner run --hosts localhost -m kubernetes.core.k8s_info -a "api_key={{ lookup('file', '/var/run/secrets/kubernetes.io/serviceaccount/token') }} ca_cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt host=https://kubernetes.default.svc kind=Pod  namespace=ansible-builder-shipwright validate_certs=yes" /tmp/ansible-runner
 ```
