@@ -95,7 +95,7 @@ kubectl apply -f resources/privileged-scc-rolebinding.yml
 7. In order for the `ansible-builder-shipwright` _ServiceAccount_ to be able to push to OpenShift's internal registry, execute the following command to create a new _Rolebinding_ called `ansible-builder-shipwright-image-pusher`:
 
 ```
-kubectl apply -f resources/edit-rolebinding.yml
+kubectl apply -f resources/image-pusher-rolebinding.yml
 ```
 
 6. Start a new Build by creating a `BuildRun`

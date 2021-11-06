@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: ansible-builder-shipwright-image-pusher
+  name: ansible-builder-shipwright-image-builder
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: edit
+  name: system:image-builder
 subjects:
   - kind: ServiceAccount
     name: ansible-builder-shipwright
