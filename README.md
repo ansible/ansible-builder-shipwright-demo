@@ -4,7 +4,7 @@ Creation of Ansible execution environments using [Ansible Builder](https://githu
 
 ## Overview
 
-Shipwright is a framework for building container images within Kubernetes. Ansible Execution environments are container images that are produced through the Ansible Builder project to enable the execution of Ansible automation using [ansible-runner](https://github.com/ansible/ansible-runner). Builds are achieved by creating a custom Shipwright `ClusterBuildStrategy` with the logic to produce container based Ansible Execution environments which are then published to a container registry. 
+Shipwright is a framework for building container images within Kubernetes. Ansible Execution environments are container images that are produced through the Ansible Builder project to enable the execution of Ansible automation using [ansible-runner](https://github.com/ansible/ansible-runner). Builds are achieved by creating a custom Shipwright `ClusterBuildStrategy` with the logic to produce container based Ansible Execution environments which are then published to a container registry.
 
 ## Installation
 
@@ -14,9 +14,9 @@ Use the following steps to install Shipwright and the `ClusterBuildStrategy` to 
 2. Install Shipwright
 
 ```
-kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.6.0/release.yaml
+kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.8.0/release.yaml
 
-kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.6.0/sample-strategies.yaml
+kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.8.0/sample-strategies.yaml
 ```
 
 Confirm the operator is running in the `build-operator` project
@@ -92,10 +92,10 @@ Elevated permissions through the use of a privileged container is needed during 
 kubectl apply -f resources/privileged-scc-rolebinding.yml
 ```
 
-7. In order for the `ansible-builder-shipwright` _ServiceAccount_ to be able to push to OpenShift's internal registry, execute the following command to create a new _Rolebinding_ called `ansible-builder-shipwright-image-pusher`:
+7. In order for the `ansible-builder-shipwright` _ServiceAccount_ to be able to push to OpenShift's internal registry, execute the following command to create a new _Rolebinding_ called `ansible-builder-shipwright-image-builder`:
 
 ```
-kubectl apply -f resources/image-pusher-rolebinding.yml
+kubectl apply -f resources/image-builder-rolebinding.yml
 ```
 
 6. Start a new Build by creating a `BuildRun`
