@@ -1,6 +1,6 @@
 # ansible-builder-shipwright
 
-Creation of Ansible execution environments using [Ansible Builder](https://github.com/ansible/ansible-builder) and [Shipwright](https://github.com/ansible/ansible-builder)
+Creation of Ansible execution environments using [Ansible Builder](https://github.com/ansible/ansible-builder) and [Shipwright](https://github.com/shipwright-io/build)
 
 ## Overview
 
