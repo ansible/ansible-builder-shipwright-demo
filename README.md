@@ -48,7 +48,7 @@ To demonstrate how an Ansible Execution environment can be produced and publishe
 
 ```
 kubectl create namespace ansible-builder-shipwright
-kubectl config set-context --current --namespace=c
+kubectl config set-context --current --namespace=ansible-builder-shipwright
 ```
 
 2. Register the Shipwright Build
@@ -124,7 +124,7 @@ First, create a _Role_ and _RoleBinding_ with the necessary permissions to query
 
 ```
 kubectl apply -f resources/test-view-pods-role.yaml
-kubectl apply -f resources/image-builder-rolebinding.yml
+kubectl apply -f resources/test-view-pods-rolebinding.yaml
 ```
 
 Next, execute the following command to validate the Execution Environment:
@@ -132,3 +132,5 @@ Next, execute the following command to validate the Execution Environment:
 ```
 kubectl run -n ansible-builder-shipwright -it ansible-builder-shipwright-example-ee --image=image-registry.openshift-image-registry.svc:5000/ansible-builder-shipwright/ansible-builder-shipwright-example-ee:latest --overrides "{ \"spec\": { \"serviceAccount\": \"ansible-builder-shipwright\" } }" --rm --restart=Never -- ansible-runner run --hosts localhost -m kubernetes.core.k8s_info -a "api_key={{ lookup('file', '/var/run/secrets/kubernetes.io/serviceaccount/token') }} ca_cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt host=https://kubernetes.default.svc kind=Pod  namespace=ansible-builder-shipwright validate_certs=yes" /tmp/ansible-runner
 ```
+
+All of the pods in the _ansible-builder-shipwright_ will be displayed with the help from the _k8s_info_ from the _kubernetes.core_ collection that wsa included in the Execution Environment as a result of the Shipwright build.s
