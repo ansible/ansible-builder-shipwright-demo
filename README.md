@@ -14,9 +14,9 @@ Use the following steps to install Shipwright and the `ClusterBuildStrategy` to 
 2. Install Shipwright
 
 ```
-kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.8.0/release.yaml
+kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.9.0/release.yaml
 
-kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.8.0/sample-strategies.yaml
+kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.9.0/sample-strategies.yaml
 ```
 
 Confirm the operator is running in the `build-operator` project
@@ -84,12 +84,12 @@ kubectl create secret docker-registry ansible-ee-images --docker-username=<usern
 kubectl patch serviceaccount ansible-builder-shipwright  -p '{"secrets": [{"name": "ansible-ee-images"}]}'
 ```
 
-6. Grant Access to the `privileged` SCC (OpenShift) to the `ansible-builder-shipwright` _ServiceAccount_
+6. Grant Access to the `anyuid` SCC (OpenShift) to the `ansible-builder-shipwright` _ServiceAccount_
 
-Elevated permissions through the use of a privileged container is needed during the build process and when running on OpenShift, access to the `privileged` Security Context Constraint is required. Grant the `ansible-builder-shipwright` ServiceAccount previously created access to the SCC by creating a _RoleBinding_ by executing the following command:
+Some of the supporting components within Shipwright require elevated capabilities  during the build process and when running on OpenShift and access to the `anyuid` Security Context Constraint is required. Grant the `ansible-builder-shipwright` ServiceAccount previously created access to the SCC by creating a _RoleBinding_ by executing the following command:
 
 ```
-kubectl apply -f resources/privileged-scc-rolebinding.yml
+kubectl apply -f resources/anyuid-scc-rolebinding.yml
 ```
 
 7. In order for the `ansible-builder-shipwright` _ServiceAccount_ to be able to push to OpenShift's internal registry, execute the following command to create a new _Rolebinding_ called `ansible-builder-shipwright-image-builder`:

@@ -8,12 +8,23 @@ spec:
         - -c
         - |
           set -e
+
+          # rootless container support (Disabled until anyuid can be removed)
+          #echo "ansible-builder:x:$(id -u):0:ansible-builder user:${HOME}:/sbin/nologin" >> /etc/passwd
+          #echo $(id -u):1100000000:65536 >> /etc/subuid
+          #echo $(id -u):1100000000:65536 >> /etc/subgid
+
+          # Change into directory containing EE
           cd /workspace/source/$(build.source.contextDir)
 
-          /usr/bin/ansible-builder build -t $(build.output.image) -v 3
+          # Create Ansible Build Context
+          /usr/bin/ansible-builder create -c $HOME/context
+
+          # Build the EE
+          /usr/bin/buildah --storage-driver=vfs build -t $(build.output.image) $HOME/context
       command:
         - /bin/bash
-      image: "quay.io/ablock/ansible-runner-podman:latest"
+      image: "quay.io/ablock/ansible-builder-nested:latest"
       name: ansible-builder-build
       resources:
         limits:
@@ -22,19 +33,18 @@ spec:
         requests:
           cpu: 500m
           memory: 512Mi
-      securityContext:
-        privileged: true
       volumeMounts:
-        - mountPath: /var/lib/containers/storage
+        - mountPath: /home/builder/.local/share/containers/storage
           name: ansible-builder-images
       workingDir: /workspace/source
     - args:
+        - --storage-driver=vfs
         - push
-        - $(build.output.image)
         - "--tls-verify=false"
+        - $(build.output.image)
       command:
-        - /usr/bin/podman
-      image: "quay.io/ablock/ansible-runner-podman:latest"
+        - /usr/bin/buildah
+      image: "quay.io/ablock/ansible-builder-nested:latest"
       name: ansible-builder-push
       resources:
         limits:
@@ -43,8 +53,6 @@ spec:
         requests:
           cpu: 250m
           memory: 256Mi
-      securityContext:
-        privileged: true
       volumeMounts:
-        - mountPath: /var/lib/containers/storage
+        - mountPath: /home/builder/.local/share/containers/storage
           name: ansible-builder-images
