@@ -10,6 +10,34 @@ Shipwright is a framework for building container images within Kubernetes. Ansib
 
 Use the following steps to install Shipwright and the `ClusterBuildStrategy` to your environment
 
+Shipwright can be installed using an Operator or by applying manifests.
+
+### Installing Using the Operator
+
+The Shipwright Operator is available in OperatorHub and facilitates a seamless deployment into OpenShift.
+
+1. Deploy the Shipwright Operator:
+
+```
+kubectl apply -f resources/operator/olm
+```
+
+2. Wait until the Operator deployed and the `ShipwrightBuild` CR has been registered
+
+```
+kubectl wait --for condition=established crd/shipwrightbuilds.operator.shipwright.io
+```
+
+3. Create a new namespace called `shipwright-build` and create the `ShipwrightBuild` resource
+
+```
+kubectl apply -f resources/operator/instance
+```
+
+### Installing Using Manifests
+
+Use the following steps to install any prerequisites followed by Shipwright from the manifests contained in the upstream project.
+
 1. Install Tekton/OpenShift Pipelines. In an OpenShift environment, this can be achieved in OperatorHub by installing either OpenShift Pipelines.
 2. Install Shipwright
 
@@ -19,15 +47,19 @@ kubectl apply --filename https://github.com/shipwright-io/build/releases/downloa
 kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.9.0/sample-strategies.yaml
 ```
 
-Confirm the operator is running in the `build-operator` project
+### Validation
+
+Confirm the operator is running in the `shipwright-build` project
 
 ```
 kubectl get pods -n shipwright-build
 ```
 
-3. Install the `ansible-builder` `ClusterBuildStrategy` by cloning this repository and adding the `ClusterBuildStrategy` to your environment
+### Custom Build Strategy
 
-Clone the repository
+Install the `ansible-builder` `ClusterBuildStrategy` by cloning this repository and adding the `ClusterBuildStrategy` to your environment.
+
+First, clone the repository
 
 ```
 git clone https://github.com/sabre1041/ansible-builder-shipwright
@@ -37,7 +69,7 @@ cd ansible-builder-shipwright
 Add the `ClusterBuildStrategy`
 
 ```
-kubectl apply -f resources/ansible-builder-clusterbuildstrategy.yml
+kubectl apply -f resources/clusterbuildstrategy/ansible-builder-clusterbuildstrategy.yml
 ```
 
 ## Example
@@ -69,7 +101,7 @@ ansible-builder-example                     True         Succeeded              
 3. Create a _ServiceAccount_ called `ansible-builder-shipwright` that will be used to execute the build.
 
 ```
-kubectl apply -f resources/serviceaccount.yml
+kubectl apply -f resources/policies/serviceaccount.yml
 ```
 
 4. Create a _Secret_ called `ansible-ee-images` containing credentials to access the Ansible Automation Platform images from the Red Hat Container Catalog or your authenticated registry by replacing your _username_ and _password_ and optionally _server_ by executing the following command:
@@ -89,13 +121,13 @@ kubectl patch serviceaccount ansible-builder-shipwright  -p '{"secrets": [{"name
 Some of the supporting components within Shipwright require elevated capabilities  during the build process and when running on OpenShift and access to the `anyuid` Security Context Constraint is required. Grant the `ansible-builder-shipwright` ServiceAccount previously created access to the SCC by creating a _RoleBinding_ by executing the following command:
 
 ```
-kubectl apply -f resources/anyuid-scc-rolebinding.yml
+kubectl apply -f resources/policies/anyuid-scc-rolebinding.yml
 ```
 
 7. In order for the `ansible-builder-shipwright` _ServiceAccount_ to be able to push to OpenShift's internal registry, execute the following command to create a new _Rolebinding_ called `ansible-builder-shipwright-image-builder`:
 
 ```
-kubectl apply -f resources/image-builder-rolebinding.yml
+kubectl apply -f resources/policies/image-builder-rolebinding.yml
 ```
 
 6. Start a new Build by creating a `BuildRun`
@@ -123,8 +155,7 @@ Confirm the functionality of the newly created Execution Environment by starting
 First, create a _Role_ and _RoleBinding_ with the necessary permissions to query the API:
 
 ```
-kubectl apply -f resources/test-view-pods-role.yaml
-kubectl apply -f resources/test-view-pods-rolebinding.yaml
+kubectl apply -f resources/testing
 ```
 
 Next, execute the following command to validate the Execution Environment:
