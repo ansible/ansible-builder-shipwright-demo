@@ -1,0 +1,4 @@
+ansible_builder_shipwright_namespace: ansible-builder-shipwright
+container_registry_username: ""
+container_registry_password: ""
+container_registry_server: registry.redhat.io

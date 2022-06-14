@@ -6,13 +6,32 @@ Creation of Ansible execution environments using [Ansible Builder](https://githu
 
 Shipwright is a framework for building container images within Kubernetes. Ansible Execution environments are container images that are produced through the Ansible Builder project to enable the execution of Ansible automation using [ansible-runner](https://github.com/ansible/ansible-runner). Builds are achieved by creating a custom Shipwright `ClusterBuildStrategy` with the logic to produce container based Ansible Execution environments which are then published to a container registry.
 
+## Prerequisites
+
+Clone the project repository repository
+
+```
+git clone https://github.com/sabre1041/ansible-builder-shipwright
+cd ansible-builder-shipwright
+```
+
 ## Installation
 
-Use the following steps to install Shipwright and the `ClusterBuildStrategy` to your environment
+The installation and configurations can either be completed manually or automated through an Ansible playbook. THe following steps will be performed:
+
+1. Installation of Shipwright
+2. Creation of a `ClusterBuildStrategy` for building Ansible Execution Environments
+3. Creation of a new namespace to perform testing
+4. Creation of a new `Build` to leverage the _ClusterBuildStrategy_ and a sample Execution Environment
+5. Creation of policies to enable the Execution Environment build process
+
+Both installation scenarios will be outlined which account the above set of tasks.The steps associated with the manual installation will be detailed first to illustrate the actions that will be automated using Ansible.
+
+### Manual
 
 Shipwright can be installed using an Operator or by applying manifests.
 
-### Installing Using the Operator
+#### Installing Using the Operator
 
 The Shipwright Operator is available in OperatorHub and facilitates a seamless deployment into OpenShift.
 
@@ -34,7 +53,7 @@ kubectl wait --for condition=established crd/shipwrightbuilds.operator.shipwrigh
 kubectl apply -f resources/operator/instance
 ```
 
-### Installing Using Manifests
+#### Installing Using Manifests
 
 Use the following steps to install any prerequisites followed by Shipwright from the manifests contained in the upstream project.
 
@@ -47,24 +66,15 @@ kubectl apply --filename https://github.com/shipwright-io/build/releases/downloa
 kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.9.0/sample-strategies.yaml
 ```
 
-### Validation
-
 Confirm the operator is running in the `shipwright-build` project
 
 ```
 kubectl get pods -n shipwright-build
 ```
 
-### Custom Build Strategy
+#### Custom Build Strategy
 
 Install the `ansible-builder` `ClusterBuildStrategy` by cloning this repository and adding the `ClusterBuildStrategy` to your environment.
-
-First, clone the repository
-
-```
-git clone https://github.com/sabre1041/ansible-builder-shipwright
-cd ansible-builder-shipwright
-```
 
 Add the `ClusterBuildStrategy`
 
@@ -72,7 +82,7 @@ Add the `ClusterBuildStrategy`
 kubectl apply -f resources/clusterbuildstrategy/ansible-builder-clusterbuildstrategy.yml
 ```
 
-## Example
+#### Example
 
 To demonstrate how an Ansible Execution environment can be produced and published to a container registry using Shipwright, an example implementation is provided within this repository.
 
@@ -130,13 +140,49 @@ kubectl apply -f resources/policies/anyuid-scc-rolebinding.yml
 kubectl apply -f resources/policies/image-builder-rolebinding.yml
 ```
 
-6. Start a new Build by creating a `BuildRun`
+### Ansible
+
+Ansible can instead be used to accomplish the each of the preceding steps to simplify the installation process. The Ansible based assets can be found in the directory called `ansible` and the setup process is located in a file called `setup.yml` in the `ansible/playbooks` directory.
+
+As part of the execution, the following extra variable must be provided at runtime:
+
+* `container_registry_username` - Username for the Red Hat Container Catalog
+* `container_registry_password` - Password for the Red Hat Container Catalog
+* `container_registry_server` - Hostname for the Red Hat Container Catalog (defaults to `registry.redhat.io`)
+
+The execution can either be performed locally using Ansible or through the use of an Execution Environment using `ansible-navigator`.
+
+When running locally, ensure that you have the required dependencies installed
+
+```shell
+ansible-galaxy collection install -r ansible/requirements.yml
+```
+
+With the necessary tooling available, execute the following command to perform the setup process:
+
+```shell
+ansible-playbook ansible/playbooks/setup.yml -e container_registry_username="<username>" -e container_registry_password="<password>"
+```
+
+Alternatively, the same task can be accomplished using `ansible-navigator` by executing the following command:
+
+```shell
+ansible-navigator run ansible/playbooks/setup.yml --mode=stdout --eev ~/.kube/config:/home/runner/.kube/config -e container_registry_username="<username>" -e container_registry_password="<password>"
+```
+
+## Building an Execution Environment
+
+With the Shipwright components now configured, let's build a sample Execution Environment. Similar to the installation, the execution can be accomplished either manually or by using Ansible.
+
+### Manual
+
+1. Start a new Build by creating a `BuildRun`
 
 ```
 kubectl create -f example/ansible-builder-buildrun.yml
 ```
 
-7. Monitor the progress of the BuildRun
+2. Monitor the progress of the BuildRun
 
 You can monitor the progress of the build which is executed using a Tekton `TaskRun` if you have the Tekton CLI (`tkn`) installed on your machine
 
@@ -148,7 +194,25 @@ The above command will display the logs for the most recent TaskRun
 
 Once the build is complete, an image will be published to OpenShift's internal image registry. Alternatively, the produced image can also be stored in an external registry, such as quay.io by modifying the `ansible-builder-example` Build resource and modifying the `output.image` field.
 
-10. Verify the newly created Ansible Execution Environment
+### Ansible
+
+Use the following commands to execute the build process using Ansible or `ansible-navigator`.
+
+When using Ansible, execute the following:
+
+```shell
+ansible-playbook ansible/playbooks/build-ee.yml
+```
+
+When using `ansible-navigator`, execute the following:
+
+```shell
+ansible-navigator run ansible/playbooks/build-ee.yml --mode=stdout --eev ~/.kube/config:/home/runner/.kube/config
+```
+
+## Verification
+
+Verify the newly created Ansible Execution Environment
 
 Confirm the functionality of the newly created Execution Environment by starting a pod that will list all pods within this namespace using the [k8s_info](https://docs.ansible.com/ansible/latest/collections/community/kubernetes/k8s_info_module.html) module from the [kubernetes.core collection](https://galaxy.ansible.com/kubernetes/core).
 

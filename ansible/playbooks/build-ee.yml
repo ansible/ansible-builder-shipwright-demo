@@ -1,0 +1,37 @@
+- name: Ansible Builder Shipwright EE Build
+  hosts: localhost
+  vars_files:
+    - "{{ playbook_dir }}/../vars/vars.yaml"
+  tasks:
+    - name: Create Shipwright Build
+      kubernetes.core.k8s:
+        name: "ansible-builder-example-{{ lookup('community.general.random_string', length=5, numbers=false, upper=false, special=false) }}"
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        definition: "{{ lookup('file', playbook_dir + '/../../example/ansible-builder-buildrun.yml') }}"
+      register: shipwright_build
+
+    - name: Wait for Build to Complete
+      kubernetes.core.k8s_info:
+        name: "{{ shipwright_build.result.metadata.name }}"
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        api_version: shipwright.io/v1alpha1
+        kind: BuildRun
+      register: shipwright_build_status
+      failed_when:
+        - shipwright_build_status.resources is defined and shipwright_build_status.resources | length == 1
+        - shipwright_build_status.resources[0].status is defined
+        - shipwright_build_status.resources[0].status.conditions is defined
+        - shipwright_build_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Succeeded') | map(attribute='status') | list | length > 0
+        - shipwright_build_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Succeeded') | map(attribute='status') | list | first == "False"
+      until:
+        - shipwright_build_status.resources is defined and shipwright_build_status.resources | length == 1
+        - shipwright_build_status.resources[0].status is defined
+        - shipwright_build_status.resources[0].status.conditions is defined
+        - shipwright_build_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Succeeded') | map(attribute='status') | list | length > 0
+        - shipwright_build_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Succeeded') | map(attribute='status') | list | first == "True"
+      retries: 60 # approx 30 minutes before we give up
+      delay: 30 # 30 seconds
+
+    - name: Print EE Image Location
+      debug:
+        msg: "EE is available at '{{ shipwright_build_status.resources[0].status.buildSpec.output.image }}'"

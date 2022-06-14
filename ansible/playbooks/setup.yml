@@ -1,0 +1,124 @@
+- name: Ansible Builder Shipwright Environment Setup
+  hosts: localhost
+  vars_files:
+    - "{{ playbook_dir }}/../vars/vars.yaml"
+  tasks:
+    - name: Verify required parameters provided
+      assert:
+        that:
+          - container_registry_username is defined
+          - container_registry_username | length > 0
+          - container_registry_password is defined
+          - container_registry_password | length > 0
+          - container_registry_server is defined
+          - container_registry_server | length > 0
+        quiet: yes
+        fail_msg: "'container_registry_username', 'container_registry_password' and 'container_registry_server' variables must be provided"
+
+    - name: Create Shipwright Subscription
+      kubernetes.core.k8s:
+        definition: "{{ lookup('file', playbook_dir + '/../../resources/operator/olm/subscription.yaml') }}"
+
+    - name: wait for the status of the Shipwright subscription to not be empty
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: Subscription
+        name: shipwright-operator
+        namespace: openshift-operators
+      register: operator_subscription_out
+      until:
+        - operator_subscription_out is defined
+        - operator_subscription_out.resources is defined
+        - operator_subscription_out.resources | length == 1
+        - operator_subscription_out.resources[0].status is defined
+        - operator_subscription_out.resources[0].status.installplan is defined
+      retries: 30
+      delay: 20
+
+    - name: Create Shipwright Namespace
+      kubernetes.core.k8s:
+        definition: "{{ lookup('file', playbook_dir + '/../../resources/operator/instance/shipwright-build-namespace.yaml') }}"
+
+    - name: Create Shipwright Build
+      kubernetes.core.k8s:
+        definition: "{{ lookup('file', playbook_dir + '/../../resources/operator/instance/shipwright-build.yaml') }}"
+
+    - name: Wait for Build Controller to Be Ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: shipwright-build-controller
+        namespace: shipwright-build
+      register: shipwright_build_controller_result
+      until:
+        - shipwright_build_controller_result is defined
+        - shipwright_build_controller_result.resources is defined
+        - shipwright_build_controller_result.resources | length == 1
+        - shipwright_build_controller_result.resources[0].status.readyReplicas is defined
+        - shipwright_build_controller_result.resources[0].status.readyReplicas == 1
+      retries: 30
+      delay: 20
+
+    - name: Create Shipwright ClusterBuildStrategy
+      kubernetes.core.k8s:
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        definition: "{{ lookup('file', playbook_dir + '/../../resources/clusterbuildstrategy/ansible-builder-clusterbuildstrategy.yml') }}"
+
+    - name: Create Namespace
+      kubernetes.core.k8s:
+        state: present
+        kind: Namespace
+        api_version: v1
+        name: "{{ ansible_builder_shipwright_namespace }}"
+
+    - name: Register Shipwright Build
+      kubernetes.core.k8s:
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        definition: "{{ lookup('file', playbook_dir + '/../../example/ansible-builder-build.yml') }}"
+
+    - name: Create Service Account
+      kubernetes.core.k8s:
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        definition: "{{ lookup('file', playbook_dir + '/../../resources/policies/serviceaccount.yml') }}"
+
+    - name: Set Registry Auth Details
+      set_fact:
+        registry_auth: "{{ container_registry_username }}:{{ container_registry_password }}"
+
+    - name: Set Registry Pull Secret Fact
+      set_fact:
+        registry_dockerconfigjson: '{"auths":{"{{ container_registry_server }}":{"username":"{{ container_registry_username }}","password":"{{ container_registry_password }}","auth":"{{ (registry_auth | b64encode) }}"}}}'
+
+    - name: Create Registry Secret
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: ansible-ee-images
+            namespace: "{{ ansible_builder_shipwright_namespace }}"
+          type: kubernetes.io/dockerconfigjson
+          data:
+            .dockerconfigjson: "{{ registry_dockerconfigjson | to_json | b64encode }}"
+        state: present
+
+    - name: Patch the default service account to use our pull secret
+      kubernetes.core.k8s_json_patch:
+        kind: ServiceAccount
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        name: ansible-builder-shipwright
+        patch:
+          - op: add
+            path: /secrets
+            value:
+              - name: ansible-ee-images
+
+    - name: Create SCC RoleBinding
+      kubernetes.core.k8s:
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        definition: "{{ lookup('file', playbook_dir + '/../../resources/policies/anyuid-scc-rolebinding.yml') }}"
+
+    - name: Create Image Builder RoleBinding
+      kubernetes.core.k8s:
+        namespace: "{{ ansible_builder_shipwright_namespace }}"
+        definition: "{{ lookup('file', playbook_dir + '/../../resources/policies/image-builder-rolebinding.yml') }}"
