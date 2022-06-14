@@ -1,4 +1,4 @@
-# ansible-builder-shipwright
+# Ansible Builder Shipwright Demo
 
 Creation of Ansible execution environments using [Ansible Builder](https://github.com/ansible/ansible-builder) and [Shipwright](https://github.com/shipwright-io/build)
 
