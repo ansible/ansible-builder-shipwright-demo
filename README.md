@@ -11,7 +11,7 @@ Shipwright is a framework for building container images within Kubernetes. Ansib
 Clone the project repository repository
 
 ```
-git clone https://github.com/sabre1041/ansible-builder-shipwright
+git clone https://github.com/ansible/ansible-builder-shipwright-demo
 cd ansible-builder-shipwright
 ```
 
