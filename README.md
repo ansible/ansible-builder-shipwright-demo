@@ -12,7 +12,7 @@ Clone the project repository repository
 
 ```
 git clone https://github.com/ansible/ansible-builder-shipwright-demo
-cd ansible-builder-shipwright
+cd ansible-builder-shipwright-demo
 ```
 
 ## Installation
